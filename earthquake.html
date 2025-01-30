@@ -12,13 +12,14 @@
             padding: 0;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Trebuchet MS', sans-serif;
             background-color: #f0f0f0;
+            text-align: center;
         }
 
         h1, h2 {
             text-align: center;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Trebuchet MS', sans-serif;
             color: #444;
         }
 
@@ -70,7 +71,7 @@
 
         th, td {
             padding: 12px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid #ddd;
         }
 
@@ -116,7 +117,7 @@
 
         async function geojsonFetch() {
             let response, earthquakes, california, filteredEarthquakes, table;
-            const startYear = 1995;
+            const startYear = 1990;
             const endYear = 2015;
             
             try {
@@ -154,7 +155,7 @@
                         'paint': {
                             'circle-radius': 8,
                             'circle-stroke-width': 2,
-                            'circle-color': 'red',
+                            'circle-color': 'blue',
                             'circle-stroke-color': 'white'
                         }
                     });
