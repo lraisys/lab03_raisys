@@ -8,8 +8,22 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
+            margin: 10px;
+            padding: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5em; 
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 1.25em;
+            padding-top: 0px;
+            padding-bottom: 0.5px;
         }
 
         #container {
@@ -35,13 +49,13 @@
         table {
             border-collapse: collapse;
             border-spacing: 0;
-            width: 100%;
+            width: 95%;
             border: 1px solid #ddd;
         }
 
         th,
         td {
-            text-align: left;
+            text-align: center;
             padding: 16px;
         }
 
@@ -54,7 +68,9 @@
 <body>
     <main id="container">
         <div id="side-panel">
-            <h2>Major Earthquakes in California (Magnitude 5.0+): 1995-2015</h2>
+            <h1>Major Earthquakes in California</h1>
+            <h1>(1990-2015)</h1>
+            <h2>Magnitude 5.0 and Higher</h2>
             <button>Sort by Magnitude</button>
             <table>
                 <tr>
@@ -72,14 +88,14 @@
         
         let map = new mapboxgl.Map({
             container: 'map', // container ID
-            style: 'mapbox://styles/mapbox/satellite-v9', // style URL
-            zoom: 5.5, // starting zoom
+            style: 'mapbox://styles/mapbox/outdoors-v12', // style URL
+            zoom: 5.25, // starting zoom
             center: [-119.5, 37.5] // starting center (California's approximate center)
         });
 
         async function geojsonFetch() {
             let response, earthquakes, california, filteredEarthquakes, table;
-            const thresholdYear = 1995;
+            const thresholdYear = 1990;
             
             try {
                 // Fetch earthquakes data
