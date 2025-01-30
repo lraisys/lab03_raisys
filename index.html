@@ -1,29 +1,22 @@
 <!DOCTYPE html>
 <html lang="en-US">
+
 <head>
     <meta charset="utf-8">
-    <title>Major Earthquakes in California (Magnitude 5.0+): 1995-2015</title>
+    <title>Earthquake List</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+
+    <!-- Including the Mapbox GL CSS file -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css" rel="stylesheet">
+
+    <!-- Including the Mapbox GL JS file -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
+
     <style>
+        /* CSS styles for the layout and components */
         body {
-            margin: 10px;
-            padding: 10px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 1.5em; 
-            padding-top: 0px;
-            padding-bottom: 0px;
-        }
-
-        h2 {
-            text-align: center;
-            font-size: 1.25em;
-            padding-top: 0px;
-            padding-bottom: 0.5px;
+            margin: 0;
+            padding: 0;
         }
 
         #container {
@@ -49,13 +42,13 @@
         table {
             border-collapse: collapse;
             border-spacing: 0;
-            width: 95%;
+            width: 100%;
             border: 1px solid #ddd;
         }
 
         th,
         td {
-            text-align: center;
+            text-align: left;
             padding: 16px;
         }
 
@@ -68,110 +61,97 @@
 <body>
     <main id="container">
         <div id="side-panel">
-            <h1>Major Earthquakes in California</h1>
-            <h1>(1990-2015)</h1>
-            <h2>Magnitude 5.0 and Higher</h2>
+
+            <h2>Earthquake List</h2>
             <button>Sort by Magnitude</button>
+
             <table>
                 <tr>
-                    <th>ID</th>
-                    <th>Magnitude</th>
-                    <th>Timestamp</th>
+                    <th>id</th>
+                    <th>magnitude</th>
+                    <th>timestamp</th>
                 </tr>
             </table>
+
         </div>
         <div id="map"></div>
-    </main>
 
+    </main>
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoibGl1Y2lyIiwiYSI6ImNtNmlpZXV2cDA5MHAycXEycTdnamcxYTgifQ.3zHmc6lb0rTDqviif3czcQ';
-        
+        // Define the Mapbox access token
+        mapboxgl.accessToken =
+            'pk.eyJ1IjoiamFrb2J6aGFvIiwiYSI6ImNpcms2YWsyMzAwMmtmbG5icTFxZ3ZkdncifQ.P9MBej1xacybKcDN_jehvw';
+
+        // Create the map object
         let map = new mapboxgl.Map({
             container: 'map', // container ID
-            style: 'mapbox://styles/mapbox/outdoors-v12', // style URL
-            zoom: 5.25, // starting zoom
-            center: [-119.5, 37.5] // starting center (California's approximate center)
+            style: 'mapbox://styles/mapbox/satellite-v9', // style URL
+            zoom: 5.5, // starting zoom
+            center: [138, 38] // starting center
         });
 
+
         async function geojsonFetch() {
-            let response, earthquakes, california, filteredEarthquakes, table;
-            const thresholdYear = 1990;
-            
-            try {
-                // Fetch earthquakes data
-                response = await fetch('assets/earthquakes.geojson');
-                earthquakes = await response.json();
-                console.log('Earthquakes data:', earthquakes);
-                
-                // Filter earthquakes to include only those from 1915 to 2015
-                filteredEarthquakes = {
-                    ...earthquakes,
-                    features: earthquakes.features.filter(feature => feature.properties.year >= thresholdYear)
-                };
-                console.log('Filtered Earthquakes data:', filteredEarthquakes);
 
-                // Fetch California boundary data
-                response = await fetch('assets/california.json');
-                california = await response.json();
-                console.log('California data:', california);
+            let response, earthquakes, japan, table;
+            response = await fetch('assets/earthquakes2.geojson');
+            earthquakes = await response.json();
+            response = await fetch('assets/japan.json');
+            japan = await response.json();
 
-                map.on('load', function loadingData() {
-                    // Add earthquakes source and layer
-                    map.addSource('earthquakes', {
-                        type: 'geojson',
-                        data: filteredEarthquakes
-                    });
+            table = document.getElementsByTagName("table")[0];
+            let row, cell1, cell2, cell3;
+            for (let i = 0; i < earthquakes.features.length; i++) {
+                // Create an empty <tr> element and add it to the 1st position of the table:
+                row = table.insertRow(-1);
+                cell1 = row.insertCell(0);
+                cell2 = row.insertCell(1);
+                cell3 = row.insertCell(2);
+                cell1.innerHTML = earthquakes.features[i].properties.id;
+                cell2.innerHTML = earthquakes.features[i].properties.mag;
+                cell3.innerHTML = new Date(earthquakes.features[i].properties.time).toLocaleDateString(
+                    "en-US");
+            }
 
-                    map.addLayer({
-                        'id': 'earthquakes-layer',
-                        'type': 'circle',
-                        'source': 'earthquakes',
-                        'paint': {
-                            'circle-radius': 8,
-                            'circle-stroke-width': 2,
-                            'circle-color': 'red',
-                            'circle-stroke-color': 'white'
-                        }
-                    });
 
-                    // Add California boundary source and layer
-                    map.addSource('california', {
-                        type: 'geojson',
-                        data: california
-                    });
+            //load data to the map as new layers and table on the side.
+            map.on('load', function loadingData() {
 
-                    map.addLayer({
-                        'id': 'california-layer',
-                        'type': 'fill',
-                        'source': 'california',
-                        'paint': {
-                            'fill-color': '#0080ff', // blue color fill
-                            'fill-opacity': 0.5
-                        }
-                    });
+                map.addSource('earthquakes', {
+                    type: 'geojson',
+                    data: earthquakes
                 });
 
-                // Populate the table with filtered earthquake data
-                table = document.getElementsByTagName("table")[0];
-                let row, cell1, cell2, cell3;
-                
-                for (let i = 0; i < filteredEarthquakes.features.length; i++) {
-                    // Create an empty <tr> element and add it to the table:
-                    row = table.insertRow(-1);
-                    cell1 = row.insertCell(0);
-                    cell2 = row.insertCell(1);
-                    cell3 = row.insertCell(2);
-                    cell1.innerHTML = filteredEarthquakes.features[i].properties.OBJECTID;
-                    cell2.innerHTML = filteredEarthquakes.features[i].properties.magnitude;
-                    cell3.innerHTML = new Date(
-                        filteredEarthquakes.features[i].properties.year, 
-                        filteredEarthquakes.features[i].properties.month - 1, 
-                        filteredEarthquakes.features[i].properties.day
-                    ).toLocaleDateString("en-US");
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
+                map.addLayer({
+                    'id': 'earthquakes-layer',
+                    'type': 'circle',
+                    'source': 'earthquakes',
+                    'paint': {
+                        'circle-radius': 8,
+                        'circle-stroke-width': 2,
+                        'circle-color': 'red',
+                        'circle-stroke-color': 'white'
+                    }
+                });
+
+
+                map.addSource('japan', {
+                    type: 'geojson',
+                    data: japan
+                });
+
+                map.addLayer({
+                    'id': 'japan-layer',
+                    'type': 'fill',
+                    'source': 'japan',
+                    'paint': {
+                        'fill-color': '#0080ff', // blue color fill
+                        'fill-opacity': 0.5
+                    }
+                });
+
+            });
+
         }
 
         geojsonFetch();
@@ -216,5 +196,7 @@
             }
         }
     </script>
+
 </body>
+
 </html>
