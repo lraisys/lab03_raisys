@@ -1,1 +1,204 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title>Major Earthquakes in California (Magnitude 5.0+): 1995-2015</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
 
+        #container {
+            display: flex;
+            height: 100vh;
+            flex-direction: row;
+            align-items: stretch;
+        }
+
+        #side-panel {
+            flex-basis: 500px;
+            overflow-y: scroll;
+        }
+
+        #map {
+            flex-grow: 1;
+        }
+
+        button {
+            margin-bottom: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 16px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <main id="container">
+        <div id="side-panel">
+            <h2>Major Earthquakes in California (Magnitude 5.0+): 1995-2015</h2>
+            <button>Sort by Magnitude</button>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Magnitude</th>
+                    <th>Timestamp</th>
+                </tr>
+            </table>
+        </div>
+        <div id="map"></div>
+    </main>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibGl1Y2lyIiwiYSI6ImNtNmlpZXV2cDA5MHAycXEycTdnamcxYTgifQ.3zHmc6lb0rTDqviif3czcQ';
+        
+        let map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/mapbox/satellite-v9', // style URL
+            zoom: 5.5, // starting zoom
+            center: [-119.5, 37.5] // starting center (California's approximate center)
+        });
+
+        async function geojsonFetch() {
+            let response, earthquakes, california, filteredEarthquakes, table;
+            const thresholdYear = 1995;
+            
+            try {
+                // Fetch earthquakes data
+                response = await fetch('assets/earthquakes.geojson');
+                earthquakes = await response.json();
+                console.log('Earthquakes data:', earthquakes);
+                
+                // Filter earthquakes to include only those from 1915 to 2015
+                filteredEarthquakes = {
+                    ...earthquakes,
+                    features: earthquakes.features.filter(feature => feature.properties.year >= thresholdYear)
+                };
+                console.log('Filtered Earthquakes data:', filteredEarthquakes);
+
+                // Fetch California boundary data
+                response = await fetch('assets/california.json');
+                california = await response.json();
+                console.log('California data:', california);
+
+                map.on('load', function loadingData() {
+                    // Add earthquakes source and layer
+                    map.addSource('earthquakes', {
+                        type: 'geojson',
+                        data: filteredEarthquakes
+                    });
+
+                    map.addLayer({
+                        'id': 'earthquakes-layer',
+                        'type': 'circle',
+                        'source': 'earthquakes',
+                        'paint': {
+                            'circle-radius': 8,
+                            'circle-stroke-width': 2,
+                            'circle-color': 'red',
+                            'circle-stroke-color': 'white'
+                        }
+                    });
+
+                    // Add California boundary source and layer
+                    map.addSource('california', {
+                        type: 'geojson',
+                        data: california
+                    });
+
+                    map.addLayer({
+                        'id': 'california-layer',
+                        'type': 'fill',
+                        'source': 'california',
+                        'paint': {
+                            'fill-color': '#0080ff', // blue color fill
+                            'fill-opacity': 0.5
+                        }
+                    });
+                });
+
+                // Populate the table with filtered earthquake data
+                table = document.getElementsByTagName("table")[0];
+                let row, cell1, cell2, cell3;
+                
+                for (let i = 0; i < filteredEarthquakes.features.length; i++) {
+                    // Create an empty <tr> element and add it to the table:
+                    row = table.insertRow(-1);
+                    cell1 = row.insertCell(0);
+                    cell2 = row.insertCell(1);
+                    cell3 = row.insertCell(2);
+                    cell1.innerHTML = filteredEarthquakes.features[i].properties.OBJECTID;
+                    cell2.innerHTML = filteredEarthquakes.features[i].properties.magnitude;
+                    cell3.innerHTML = new Date(
+                        filteredEarthquakes.features[i].properties.year, 
+                        filteredEarthquakes.features[i].properties.month - 1, 
+                        filteredEarthquakes.features[i].properties.day
+                    ).toLocaleDateString("en-US");
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        geojsonFetch();
+
+        let btn = document.getElementsByTagName("button")[0];
+
+        btn.addEventListener('click', sortTable);
+
+        // define the function to sort table
+        function sortTable(e) {
+            let table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementsByTagName("table")[0];
+            switching = true;
+            /*Make a loop that will continue until
+            no switching has been done:*/
+            while (switching) {
+                //start by saying: no switching is done:
+                switching = false;
+                rows = table.rows;
+                /*Loop through all table rows (except the
+                first, which contains table headers):*/
+                for (i = 1; i < (rows.length - 1); i++) {
+                    //start by saying there should be no switching:
+                    shouldSwitch = false;
+                    /*Get the two elements you want to compare,
+                    one from current row and one from the next:*/
+                    x = parseFloat(rows[i].getElementsByTagName("td")[1].innerHTML);
+                    y = parseFloat(rows[i + 1].getElementsByTagName("td")[1].innerHTML);
+                    //check if the two rows should switch place:
+                    if (x < y) {
+                        //if so, mark as a switch and break the loop:
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+                if (shouldSwitch) {
+                    /*If a switch has been marked, make the switch
+                    and mark that a switch has been done:*/
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
