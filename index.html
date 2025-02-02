@@ -2,36 +2,33 @@
 <html lang="en-US">
 <head>
     <meta charset="utf-8">
-    <title>Major Earthquakes in California (Magnitude 5.0+): 1995-2015</title>
+    <title>Major Earthquakes in California (1965-2015) Magnitude 5.0 and Higher</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
     <style>
         body {
-            margin: 10px;
+            margin: 0;
             padding: 0;
             height: 100vh;
             overflow: hidden;
             font-family: 'Trebuchet MS', sans-serif;
-            background-color: #f0f0f0;
-            text-align: center;
         }
 
-        h1, h2 {
+        h1, h2, h3 {
             text-align: center;
-            font-family: 'Trebuchet MS', sans-serif;
-            color: #444;
         }
 
         #container {
             display: flex;
             height: 100vh;
-            flex-direction: row;
-            align-items: stretch;
+            width: 100vw;
         }
 
         #side-panel {
-            flex-basis: 350px;
+            width: 350px;
+            max-width: 350px;
             overflow-y: auto;
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
@@ -81,7 +78,7 @@
 
         @media (max-width: 1024px) {
             #side-panel {
-                transform: translateX(-100%);
+                display: none;
             }
         }
     </style>
@@ -91,7 +88,7 @@
     <main id="container">
         <div id="side-panel">
             <h1>Major Earthquakes in California</h1>
-            <h2>(1990-2015)</h2>
+            <h2>(1965-2015)</h2>
             <h2>Magnitude 5.0 and Higher</h2>
             <button>Sort by Magnitude</button>
             <table>
@@ -117,7 +114,7 @@
 
         async function geojsonFetch() {
             let response, earthquakes, california, filteredEarthquakes, table;
-            const startYear = 1990;
+            const startYear = 1965;
             const endYear = 2015;
             
             try {
@@ -125,21 +122,23 @@
                 response = await fetch('assets/earthquakes.geojson');
                 earthquakes = await response.json();
                 console.log('Earthquakes data:', earthquakes);
-                
-                // Filter earthquakes to include only those from 1995 to 2015
-                filteredEarthquakes = {
-                    ...earthquakes,
-                    features: earthquakes.features.filter(feature => {
-                        const year = feature.properties.year;
-                        return year >= startYear && year <= endYear;
-                    })
-                };
-                console.log('Filtered Earthquakes data:', filteredEarthquakes);
 
                 // Fetch California boundary data
                 response = await fetch('assets/california.json');
                 california = await response.json();
                 console.log('California data:', california);
+
+                // Filter earthquakes to include only those from 1990 to 2015 and within California boundary
+                filteredEarthquakes = {
+                    ...earthquakes,
+                    features: earthquakes.features.filter(feature => {
+                        const year = feature.properties.year;
+                        const point = turf.point(feature.geometry.coordinates);
+                        const polygon = california;
+                        return year >= startYear && year <= endYear && turf.booleanPointInPolygon(point, polygon);
+                    })
+                };
+                console.log('Filtered Earthquakes data:', filteredEarthquakes);
 
                 map.on('load', function loadingData() {
                     // Add earthquakes source and layer
